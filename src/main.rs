@@ -1,20 +1,27 @@
-use std::{fs::{File, self}, io::{Write, Seek, SeekFrom, Read}, os::windows::prelude::FileExt, path::Path};
+use std::{fs::{File, self}, io::{Write, Seek, SeekFrom, Read}, os::windows::prelude::FileExt, path::Path, env};
 
 fn main() -> std::io::Result<()> {
-    if !Path::new("output").exists() {
-        fs::create_dir("output").expect("couldn't create output directory");
+    let foldername = "riff_output";
+    if !Path::new(&foldername).exists() {
+        fs::create_dir(&foldername).expect("couldn't create output directory");
     }
 
-    //set input file here :p
-    let filename = "input_file.bin";
-    let mut file = File::open(&filename)?;
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 1 {
+        println!("bad arguments");
+        return Ok(());
+    }
+
+    let filename = Path::new(&args[1]);
+    let mut file = File::open(filename)?;
     
     let mut cursor = 0;
     let mut buffer = [0; 4];
     while file.seek_read(&mut buffer, cursor)? == 4 {
         if &buffer == b"RIFF" {
             file.seek(SeekFrom::Start(cursor)).unwrap();
-            let filename = format!("output/{filename}-{cursor}.wav");
+            let parent = Path::new(&filename).parent().expect("could not find parent folder");
+            let filename = format!("{}/{}-{cursor}.wav", parent.join(foldername).to_string_lossy(), filename.file_name().unwrap().to_string_lossy());
 
             println!("found new riff at offset {}", cursor);
 
