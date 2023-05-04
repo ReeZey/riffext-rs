@@ -41,10 +41,10 @@ fn main() -> std::io::Result<()> {
         let cursor = current_offset.unwrap() - 4;
 
         let parent = Path::new(&filename).parent().expect("could not find parent folder");
-        println!("found new riff at offset {:3}", cursor);
+        println!("found new riff at offset {}", cursor);
 
         file.read_exact(&mut buffer)?; //ChunkData Length
-        let total_size = i32::from_le_bytes(buffer) - 4;
+        let total_size = i32::from_le_bytes(buffer);
         file.read_exact(&mut buffer)?; //Format
         let file_type = get_type(&buffer);
 
@@ -55,7 +55,7 @@ fn main() -> std::io::Result<()> {
         new_file.write(&total_size.to_le_bytes()).expect("could not write to file");
         new_file.write_all(&buffer).expect("could not write to file");
         
-        let mut buffer = vec![0; total_size as usize];
+        let mut buffer = vec![0; (total_size - 4) as usize];
         file.read_exact(&mut buffer).unwrap();
 
         new_file.write_all(&buffer).unwrap();
